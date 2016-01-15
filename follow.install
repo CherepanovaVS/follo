@@ -38,7 +38,7 @@ function follow_schema() {
       ),
       'name' => array(
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 32,
         'not null' => TRUE,
         'default' => '',
         'description' => "The machine name of the {follow_links}.",
@@ -64,7 +64,7 @@ function follow_schema() {
       ),
       'title' => array(
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 64,
         'not null' => TRUE,
         'default' => '',
         'description' => 'The human readable name for the link.',
@@ -89,11 +89,12 @@ function follow_schema() {
  * Implements hook_uninstall().
  */
 function follow_uninstall() {
-  \Drupal::config('follow.settings')->clear('follow_user_block_title');
-  \Drupal::config('follow.settings')->clear('follow_site_block_title');
-  \Drupal::config('follow.settings')->clear('follow_site_block_user');
-  \Drupal::config('follow.settings')->clear('follow_site_icon_style');
-  \Drupal::config('follow.settings')->clear('follow_user_icon_style');
-  \Drupal::config('follow.settings')->clear('follow_site_alignment');
-  \Drupal::config('follow.settings')->clear('follow_user_alignment');
+  $config = \Drupal::service('config.factory')->getEditable('follow.settings');
+  $config->clear('follow_user_block_title')->save();
+  $config->clear('follow_site_block_title')->save();
+  $config->clear('follow_site_block_user')->save();
+  $config->clear('follow_site_icon_style')->save();
+  $config->clear('follow_user_icon_style')->save();
+  $config->clear('follow_site_alignment')->save();
+  $config->clear('follow_user_alignment')->save();
 }
