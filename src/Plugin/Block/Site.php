@@ -9,6 +9,7 @@ namespace Drupal\follow\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides the Site block.
@@ -24,9 +25,9 @@ class Site extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    $args = explode('/', current_path());
+    $args = explode('/', Url::fromRoute('<current>'));
     if (($content = _follow_block_content('site'))
-        && (\Drupal::config('follow.settings')->get('follow_site_block_user') || !($args[0] == 'user' && is_numeric($args[1])))) {
+      && (\Drupal::config('follow.settings')->get('follow_site_block_user') || !($args[0] == 'user' && is_numeric($args[1])))) {
       return array(
         'subject' => _follow_block_subject(),
         'content' => $content,
@@ -34,7 +35,7 @@ class Site extends BlockBase {
     }
   }
 
-    /**
+  /**
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {
@@ -62,7 +63,7 @@ class Site extends BlockBase {
         'horizontal' => t('Horizontal'),
       ),
       '#description' => t('Whether the icons are to appear horizontally beside each other, or one after another in a list.'),
-      '#default_value' => \Drupal::config('follow.settings')->get("follow_{$delta}_alignment"),
+      '#default_value' => \Drupal::config('follow.settings')->get('follow_site_alignment'),
     );
     // Allow changing which icon style to use on the global service links.
     $form['follow_icon_style'] = array(
@@ -70,7 +71,7 @@ class Site extends BlockBase {
       '#title' => t('Icon Style'),
       '#options' => follow_icon_style_options(),
       '#description' => t('How the Follow icons should appear.'),
-      '#default_value' => \Drupal::config('follow.settings')->get("follow_{$delta}_icon_style"),
+      '#default_value' => \Drupal::config('follow.settings')->get('follow_site_icon_style'),
     );
     return $form;
   }
@@ -79,11 +80,12 @@ class Site extends BlockBase {
    * {@inheritdoc}
    */
   public function blockSubmit($form, FormStateInterface $form_state) {
+    $config = \Drupal::service('config.factory')->getEditable('follow.settings');
     $values = $form_state->getValues();
-    \Drupal::config('follow.settings')->set("follow_site_block_title", $values['follow_title'])->save();
-    \Drupal::config('follow.settings')->set('follow_site_block_user', $values['follow_user'])->save();
-    \Drupal::config('follow.settings')->set("follow_site_alignment", $values['follow_alignment'])->save();
-    \Drupal::config('follow.settings')->set("follow_site_icon_style", $values['follow_icon_style'])->save();
+    $config->set('follow_site_block_title', $values['follow_title'])->save();
+    $config->set('follow_site_block_user', $values['follow_user'])->save();
+    $config->set('follow_site_alignment', $values['follow_alignment'])->save();
+    $config->set('follow_site_icon_style', $values['follow_icon_style'])->save();
     // Reset the CSS in case the styles changed.
     follow_save_css(TRUE);
   }

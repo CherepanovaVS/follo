@@ -2,6 +2,8 @@
 
 namespace Drupal\follow;
 
+require_once 'modules/contrib/follow/follow.inc';
+
 /**
  * Handles CRUD operations to {follow_links} table.
  */

@@ -2,7 +2,7 @@ follow.css_path:
   path: 'css/{filepath}'
   defaults:
     _title: 'Generate Follow CSS'
-    _content: '\Drupal\follow\Controller\DefaultController::follow_css'
+    _controller: '\Drupal\follow\Controller\FollowController::follow_css'
 follow.admin:
   path: 'admin/config/services/follow'
   defaults:
@@ -16,4 +16,4 @@ entity.user.follow_form:
     _title: 'Follow'
     _form: '\Drupal\follow\Form\FollowLinksForm'
   requirements:
-    _custom_access: '\Drupal\follow\Controller\DefaultController::follow_links_user_access'
+    _custom_access: '\Drupal\follow\Controller\FollowController::follow_links_user_access'
