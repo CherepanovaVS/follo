@@ -119,7 +119,10 @@ function _follow_links_element(array $links, array $networks, $type, $alignment 
   // Let's be sure the CSS exists before printing this.
   follow_save_css();
   $element['follow-links']['#prefix'] = "<div class='follow-links clearfix {$type}'>";
-  $element['follow-links']['#attached']['css'][] = _follow_css_get_path();
+  $element['follow-links']['#attached']['html_head'][] = array(array(
+    '#tag' => 'style',
+    '#value' => _follow_css_get_path(),
+  ), 'follow_css');
 
   if (!isset($alignment)) {
     $alignment = \Drupal::config('follow.settings')->get("follow_{$type}_alignment");
