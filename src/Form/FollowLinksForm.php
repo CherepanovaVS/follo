@@ -18,16 +18,19 @@ class FollowLinksForm extends FormBase {
     return 'follow_links_form';
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state, $user = 0) {
     $form = array();
 
     $form['uid'] = array('#type' => 'hidden', '#value' => $user);
 
-    $header = array(t('Name'), t('URL'), t('Weight'),);
-    if (\Drupal::currentUser()->hasPermission('change follow link titles')) { 
+    $header = array(t('Name'), t('Weight'), t('URL'));
+    if (\Drupal::currentUser()->hasPermission('change follow link titles')) {
       $header[] = t('Customized Name');
     }
-    
+
     $form['follow_links'] = array(
       '#type' => 'table',
       '#header' => $header,
@@ -57,13 +60,6 @@ class FollowLinksForm extends FormBase {
     $form['follow_links_disabled'] = array(
       '#type' => 'table',
       '#header' => array(t('Name'), t('URL')),
-      '#tabledrag' => array(
-        array(
-          'action' => 'order',
-          'relationship' => 'sibling',
-          'group' => 'follow-order-weight',
-        ),
-      ),
     );
 
     // Now add all the empty ones.
@@ -85,11 +81,36 @@ class FollowLinksForm extends FormBase {
 
     $elements['name'] = array(
       '#markup' => $title,
-   );
+    );
 
     if (isset($link->lid)) {
-      $elements['#weight'] = $link->weight;
       $elements['#attributes']['class'][] = 'draggable';
+      $elements['#weight'] = $link->weight;
+      $elements['weight'] = array(
+        '#type' => 'weight',
+        '#default_value' => $link->weight,
+        '#attributes' => array('class' => array('follow-order-weight')),
+      );
+    }
+
+    $elements['url'] = array(
+      '#type' => 'textfield',
+      '#follow_network' => $link->name,
+      '#follow_uid' => $uid,
+      '#default_value' => isset($link->url) ? $link->url : '',
+      '#element_validate' => array(
+        array($this, 'follow_url_validate')),
+    );
+
+    // Provide the title of the link only if the link URL is there and the user
+    // has the appropriate access.
+    $elements['title'] = array(
+      '#type' => 'textfield',
+      '#default_value' => isset($link->title) ? $link->title : '',
+      '#access' => \Drupal::currentUser()->hasPermission('change follow link titles') && !empty($link->url),
+    );
+
+    if (isset($link->lid)) {
       $elements['lid'] = array(
         '#type' => 'hidden',
         '#value' =>  $link->lid,
@@ -97,33 +118,35 @@ class FollowLinksForm extends FormBase {
         '#prefix' => '<div>',
         '#suffix' => '</div>',
       );
-      $elements['weight'] = array(
-        '#type' => 'weight',
-        '#default_value' => $link->weight,
-        '#attributes' => array('class' => array('follow-order-weight')),
-      );
     }
-    $elements['url'] = array(
-      '#type' => 'textfield',
-      '#follow_network' => $link->name,
-      '#follow_uid' => $uid,
-      '#default_value' => isset($link->url) ? $link->url : '',
-      '#element_validate' => array('follow_url_validate'),
-    );
-    // Provide the title of the link only if the link URL is there and the user
-    // has the appropriate access.
-    $elements['title'] = array(
-      '#type' => 'textfield',
-      '#default_value' => isset($link->title) ? $link->title : '',
-      '#size' => 15,
-      '#access' => \Drupal::currentUser()->hasPermission('change follow link titles') && !empty($link->url),
-    );
 
     return $elements;
-}
+  }
 
+  /**
+   * Validates the url field to verify it's actually a url.
+   */
+  public function follow_url_validate($form, FormStateInterface $form_state) {
+    $url = trim($form['#value']);
+    $networks = follow_networks_load($form['#follow_uid']);
+    $info = $networks[$form['#follow_network']];
+    $regex = follow_build_url_regex($info);
+    $parsed = follow_parse_url($url);
+    if($url && !preg_match($regex, $parsed['path'])) {
+      if (!empty($info['domain'])) {
+        $message = t('The specified url is invalid for the domain %domain.  Make sure you use http://.', array('%domain' => $info['domain']));
+      }
+      else {
+        $message = t('The specified path is invalid.  Please enter a path on this site (e.g. rss.xml or taxonomy/term/1/feed).');
+      }
+      $form_state->setError($form, $message);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
     $values = $form_state->getValues();
     $links = $values['follow_links'];
     $links_disabled = $values['follow_links_disabled'];
@@ -158,9 +181,10 @@ class FollowLinksForm extends FormBase {
         $link = new FollowLink($link);
         $link->uid = $values['uid'];
         $link->name = $name;
+        $link->weight = 0;
         $link->create();
       }
     }
-
   }
+
 }

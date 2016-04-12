@@ -211,26 +211,6 @@ function follow_parse_url($url) {
 }
 
 /**
- * Validates the url field to verify it's actually a url.
- */
-function follow_url_validate($form, FormStateInterface $form_state) {
-  $url = trim($form['#value']);
-  $networks = follow_networks_load($form['#follow_uid']);
-  $info = $networks[$form['#follow_network']];
-  $regex = follow_build_url_regex($info);
-  $parsed = follow_parse_url($url);
-  if($url && !preg_match($regex, $parsed['path'])) {
-    if (!empty($info['domain'])) {
-      $message = t('The specified url is invalid for the domain %domain.  Make sure you use http://.', array('%domain' => $info['domain']));
-    }
-    else {
-      $message = t('The specified path is invalid.  Please enter a path on this site (e.g. rss.xml or taxonomy/term/1/feed).');
-    }
-    $form_state->setError($form, $message);
-  }
-}
-
-/**
  * Build a regex to validate the url based on a known service url.
  */
 function follow_build_url_regex($network_info) {
